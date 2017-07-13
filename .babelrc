@@ -1,7 +1,15 @@
 {
-  "presets": ["latest"],
+  "presets": [
+    [
+      "env",
+      {
+        "targets": {
+          "node": "current"
+        }
+      }
+    ]
+  ],
   "plugins": [
-    ["transform-react-jsx", { "pragma":"h" }],
     "transform-object-rest-spread"
   ]
 }

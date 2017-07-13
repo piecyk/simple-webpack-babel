@@ -1,21 +1,49 @@
+import fs from 'fs';
 import path from 'path';
 import webpack from 'webpack';
 
 const buildTimestamp = Date.now();
 const nodeEnv = process.env.NODE_ENV;
-const isDevelopmentMode = nodeEnv !== 'production';
 const nodePaths = (process.env.NODE_PATH || '').split(':').map(p => path.resolve(p));
+const isDevelopmentMode = nodeEnv !== 'production';
 
-const distPath = path.resolve(__dirname, 'dist');
+const projectRootDir =__dirname;
+const srcPath = path.resolve(projectRootDir, 'src');
+const outPath = path.resolve(projectRootDir, 'dist');
 const publicPath = '/';
+
+const babelrc = JSON.parse(
+  fs.readFileSync(path.resolve(projectRootDir, '.babelrc'), 'utf8')
+);
+const babelOptions = {
+  babelrc: false,
+  ...babelrc,
+  presets: [
+    ['env', {modules: false}]
+  ],
+  plugins: [
+    ...babelrc.plugins,
+    'syntax-dynamic-import',
+    ['transform-react-jsx', {'pragma':'h'}],
+  ]
+};
+
+const developmentPlugins = () => [
+];
+
+const productionPlugins = () => [
+];
+
+console.log(`Starting ${isDevelopmentMode ?
+  'development' : 'production'} mode build (NODE_ENV:${nodeEnv})`);
 
 const options = {
   entry: [
-    path.resolve(__dirname, 'src/index.js'),
+    path.resolve(srcPath, 'index.js')
   ],
   output: {
     publicPath,
-    path: distPath,
+    path: outPath,
     filename: 'bundle.js'
   },
   resolve: {
@@ -24,9 +52,12 @@ const options = {
   module: {
     rules: [
       {
-        exclude: [/(node_modules)/],
         test: /\.jsx?$/,
-        loader: 'babel-loader'
+        loader: 'babel-loader',
+        options: babelOptions,
+        exclude: [
+          /(node_modules)/
+        ]
       },
     ]
   },
@@ -35,7 +66,7 @@ const options = {
     new webpack.optimize.ModuleConcatenationPlugin(),
     new webpack.DefinePlugin((() => {
       const env = {
-        ...process.env,
+        // ...process.env,
         IS_DEVELOPMENT_MODE: isDevelopmentMode,
         BUILD_TIMESTAMP: buildTimestamp,
         NODE_ENV: nodeEnv
@@ -45,7 +76,8 @@ const options = {
           (acc, k) => ({...acc, [k]: JSON.stringify(env[k])}), {}
         )
       };
-    })())
+    })()),
+    ...(isDevelopmentMode ? developmentPlugins() : productionPlugins())
   ],
   devServer: {
     publicPath,

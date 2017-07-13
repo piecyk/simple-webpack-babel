@@ -1,6 +1,14 @@
 import { h, render, Component } from 'preact';
 
+console.log('yeah');
+
 class Clock extends Component {
+  componentDidMount() {
+    console.log('mount');
+    import('./test.js').then(({a}) => {
+      console.log('res from test', a);
+    });
+  }
   render() {
     let time = new Date().toLocaleTimeString();
     return (
@@ -8,7 +16,5 @@ class Clock extends Component {
     );
   }
 }
-
-console.log('yeah');
 
 render(<Clock/>, document.body);
